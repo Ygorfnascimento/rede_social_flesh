@@ -10,6 +10,6 @@ app.config['SECRET_KEY'] = 'secret'
 database = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'home.page'
+login_manager.login_view = 'homepage'
 
 from appfleshi import routes
