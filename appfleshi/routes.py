@@ -1,8 +1,10 @@
 from flask import render_template, url_for, redirect
 from flask_login import login_required, login_user, logout_user, current_user
-from appfleshi.forms import LoginForm, RegisterForm
+from appfleshi.forms import LoginForm, RegisterForm, PhotoForm
 from appfleshi import app, database, bcrypt
 from appfleshi.models import User, Photo
+import os
+from werkzeug.utils import secure_filename
 
 @app.route('/', methods=['GET', 'POST'])
 def homepage():
@@ -14,14 +16,23 @@ def homepage():
             return redirect(url_for('profile', user_id=user.id))
     return render_template('homepage.html', form=login_form)
 
-@app.route('/profile/<user_id>')
+@app.route('/profile/<user_id>', methods=['GET', 'POST'])
 @login_required
 def profile(user_id):
     if int(user_id) == int(current_user.id):
-        return render_template('profile.html', user=current_user)
+        photo_form = PhotoForm()
+        if photo_form.validate_on_submit():
+            file = photo_form.photo.data
+            secure_name = secure_filename(file.filename)
+            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], secure_name)
+            file.save(path)
+            photo = Photo(file_name=secure_name, user_id=current_user.id)
+            database.session.add(photo)
+            database.session.commit()
+        return render_template('profile.html', user=current_user, form=photo_form)
     else:
         user = User.query.get(int(user_id))
-        return render_template('profile.html', user=user)
+        return render_template('profile.html', user=user, form=None)
 
 @app.route('/createaccount', methods=['GET', 'POST'])
 def createaccount():
