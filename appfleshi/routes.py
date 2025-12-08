@@ -5,6 +5,7 @@ from appfleshi import app, database, bcrypt
 from appfleshi.models import User, Photo
 import os
 from werkzeug.utils import secure_filename
+import time
 
 @app.route('/', methods=['GET', 'POST'])
 def homepage():
@@ -16,6 +17,7 @@ def homepage():
             return redirect(url_for('profile', user_id=user.id))
     return render_template('homepage.html', form=login_form)
 
+
 @app.route('/profile/<user_id>', methods=['GET', 'POST'])
 @login_required
 def profile(user_id):
@@ -23,16 +25,31 @@ def profile(user_id):
         photo_form = PhotoForm()
         if photo_form.validate_on_submit():
             file = photo_form.photo.data
-            secure_name = secure_filename(file.filename)
-            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], secure_name)
+
+            filename, ext = os.path.splitext(file.filename)
+            unique_name = f"{filename}_{int(time.time())}{ext}"
+
+            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], unique_name)
             file.save(path)
-            photo = Photo(file_name=secure_name, user_id=current_user.id)
-            database.session.add(photo)
+
+            existing_photo = Photo.query.filter_by(user_id=current_user.id).first()
+            if existing_photo:
+                old_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'],
+                                        existing_photo.file_name)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+                existing_photo.file_name = unique_name
+            else:
+                photo = Photo(file_name=unique_name, user_id=current_user.id)
+                database.session.add(photo)
+
             database.session.commit()
+
         return render_template('profile.html', user=current_user, form=photo_form)
     else:
         user = User.query.get(int(user_id))
         return render_template('profile.html', user=user, form=None)
+
 
 @app.route('/createaccount', methods=['GET', 'POST'])
 def createaccount():
@@ -52,3 +69,9 @@ def createaccount():
 def logout():
     logout_user()
     return redirect(url_for('homepage'))
+
+@app.route("/feed")
+@login_required
+def feed():
+    photos = Photo.query.order_by(Photo.upload_date.desc()).all()
+    return render_template("feed.html", photos=photos)
