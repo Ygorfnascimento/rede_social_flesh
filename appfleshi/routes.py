@@ -1,4 +1,4 @@
-from flask import render_template, url_for, redirect
+from flask import render_template, url_for, redirect, request
 from flask_login import login_required, login_user, logout_user, current_user
 from appfleshi.forms import LoginForm, RegisterForm, PhotoForm
 from appfleshi import app, database, bcrypt
@@ -17,39 +17,35 @@ def homepage():
             return redirect(url_for('profile', user_id=user.id))
     return render_template('homepage.html', form=login_form)
 
-
 @app.route('/profile/<user_id>', methods=['GET', 'POST'])
 @login_required
 def profile(user_id):
-    if int(user_id) == int(current_user.id):
-        photo_form = PhotoForm()
-        if photo_form.validate_on_submit():
-            file = photo_form.photo.data
+    if int(user_id) != int(current_user.id):
+        user = User.query.get(int(user_id))
+        return render_template('profile.html', user=user, form=None)
+
+    photo_form = PhotoForm()
+
+    if photo_form.validate_on_submit():
+        files = request.files.getlist("photo")
+
+        for file in files:
+            if file.filename == "":
+                continue
 
             filename, ext = os.path.splitext(file.filename)
             unique_name = f"{filename}_{int(time.time())}{ext}"
 
-            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], unique_name)
+            path = os.path.join(os.path.abspath(os.path.dirname(__file__)),app.config['UPLOAD_FOLDER'],secure_filename(unique_name))
             file.save(path)
 
-            existing_photo = Photo.query.filter_by(user_id=current_user.id).first()
-            if existing_photo:
-                old_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'],
-                                        existing_photo.file_name)
-                if os.path.exists(old_path):
-                    os.remove(old_path)
-                existing_photo.file_name = unique_name
-            else:
-                photo = Photo(file_name=unique_name, user_id=current_user.id)
-                database.session.add(photo)
+            photo = Photo(file_name=unique_name, user_id=current_user.id)
+            database.session.add(photo)
 
-            database.session.commit()
+        database.session.commit()
+        return redirect(url_for('profile', user_id=current_user.id))
 
-        return render_template('profile.html', user=current_user, form=photo_form)
-    else:
-        user = User.query.get(int(user_id))
-        return render_template('profile.html', user=user, form=None)
-
+    return render_template('profile.html', user=current_user, form=photo_form)
 
 @app.route('/createaccount', methods=['GET', 'POST'])
 def createaccount():
@@ -75,3 +71,20 @@ def logout():
 def feed():
     photos = Photo.query.order_by(Photo.upload_date.desc()).all()
     return render_template("feed.html", photos=photos)
+
+@app.route('/deletephoto/<photo_id>', methods=['GET', 'POST'])
+@login_required
+def delete_photo(photo_id):
+    photo = Photo.query.get(photo_id)
+
+    if photo.user_id != current_user.id:
+        return "Acesso negado", 403
+
+    path = os.path.join(os.path.abspath(os.path.dirname(__file__)),app.config['UPLOAD_FOLDER'], photo.file_name)
+    if os.path.exists(path):
+        os.remove(path)
+
+        database.session.delete(photo)
+        database.session.commit()
+
+        return redirect(url_for('profile', user_id=photo.user_id))
