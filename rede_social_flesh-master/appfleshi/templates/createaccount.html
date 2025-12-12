@@ -2,70 +2,36 @@
 
 {% block body %}
     <div class="container mt-4">
-        <h1 class="text-center mb-4">Feed de Fotos</h1>
+        <h1 class="text-center mb-4">Criação de Conta</h1>
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-            <div class="container-fluid">
-                <ul class="navbar-nav mx-auto">
-                    <li class="nav-item mx-3">
-                        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="nav-link">
-                            <i class="bi bi-person-circle"></i> Perfil
-                        </a>
-                    </li>
-                    <li class="nav-item mx-3">
-                        <a href="{{ url_for('logout') }}" class="nav-link">
-                            <i class="bi bi-box-arrow-right"></i> Sair
-                        </a>
-                    </li>
-                </ul>
+        <form method="POST" action="{{ url_for('createaccount') }}">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                {{ form.email(class="form-control") }}
             </div>
-        </nav>
 
-        <div class="row">
-            {% for photo in photos %}
-                <div class="col-md-6 col-sm-12 mb-4">
-                    <div class="card shadow-lg">
-                        <img src="{{ url_for('static', filename='posts_photos/' + photo.file_name) }}"
-                             class="card-img-top"
-                             alt="Foto"
-                             style="height: 300px; object-fit: cover; width: 100%;">
-                        <div class="card-body">
-                            <p class="text-muted">Postado em: {{ photo.timestamp.strftime('%d/%m/%Y %H:%M') }}</p>
+            <div class="mb-3">
+                <label for="username" class="form-label">Nome de Usuário</label>
+                {{ form.username(class="form-control") }}
+            </div>
 
-                            <p class="text-success"><strong>{{ photo.likes|length }}</strong> Curtidas</p>
+            <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                {{ form.password(class="form-control") }}
+            </div>
 
-                            <form action="{{ url_for('like', photo_id=photo.id) }}" method="POST" class="like-form mb-2">
-                                <button type="submit" class="btn btn-outline-success w-100">
-                                    {% if current_user in photo.likes %}
-                                        👎 Descurtir
-                                    {% else %}
-                                        ❤️ Curtir
-                                    {% endif %}
-                                </button>
-                            </form>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirmar Senha</label>
+                {{ form.confirm_password(class="form-control") }}
+            </div>
 
-                            <div class="comments mb-3">
-                                {% for comment in photo.comments %}
-                                    <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
-                                {% endfor %}
-                            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary w-100">Criar Conta</button>
+            </div>
+        </form>
 
-                            <form method="POST" action="{{ url_for('comment', photo_id=photo.id) }}">
-                                {{ form.hidden_tag() }}
-
-                                <div>
-                                    <label for="content">Digite seu comentário:</label>
-                                    {{ form.content(class="form-control") }}
-                                </div>
-
-                                <div class="mt-2">
-                                    {{ form.submit(class="btn btn-outline-success w-100", value="Comentar") }}
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+        <p class="text-center">Já tem uma conta? <a href="{{ url_for('homepage') }}">Faça login aqui.</a></p>
     </div>
 {% endblock %}

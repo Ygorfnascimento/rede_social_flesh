@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>
-        {% block title  %}
+        {% block title %}
             Fléshi - Página inicial
         {% endblock %}
     </title>
@@ -38,6 +38,13 @@
             display: block;
             margin-top: 15px;
         }
+        .register-link a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -49,19 +56,25 @@
         <div class="form-container">
             <form method="post">
                 {{ form.csrf_token }}
+
                 <div class="mb-3">
                     {{ form.email.label(class="form-label") }}
                     {{ form.email(class="form-control") }}
                 </div>
+
                 <div class="mb-3">
                     {{ form.password.label(class="form-label") }}
                     {{ form.password(class="form-control") }}
                 </div>
+
                 <div>
                     {{ form.submit(class="btn btn-custom") }}
                 </div>
             </form>
-            <a href="{{ url_for('createaccount') }}" class="register-link">Não tem uma conta? Cadastre-se</a>
+
+            <div class="register-link">
+                <p>Não tem uma conta? <a href="{{ url_for('createaccount') }}">Cadastre-se</a></p>
+            </div>
         </div>
     </div>
 
