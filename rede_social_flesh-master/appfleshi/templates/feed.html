@@ -1,0 +1,30 @@
+{% extends "homepage.html" %}
+
+{% block title %}
+    Fléshi - Feed
+{% endblock %}
+
+{% block body %}
+    {% include "navbar.html" %}
+    <h1>Feed Principal</h1>
+
+    {% for photo in photos %}
+        <div class="photo-container" style="margin-bottom: 20px;">
+            <a href="{{ url_for('profile', user_id=photo.user_id) }}">
+                <img src="{{ url_for('static', filename='posts_photos/' ~ photo.file_name) }}" alt="imagem" style="max-width: 200px;">
+            </a>
+
+            <p>{{ photo.likes|length }} Curtidas</p>
+
+            <form method="POST" action="{{ url_for('like', photo_id=photo.id) }}">
+                <button type="submit">
+                    {% if current_user in photo.likes %}
+                        👎 Descurtir
+                    {% else %}
+                         👍 Curtir
+                    {% endif %}
+                 </button>
+            </form>
+        </div>
+    {% endfor %}
+{% endblock %}

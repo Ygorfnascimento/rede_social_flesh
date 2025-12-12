@@ -1,0 +1,46 @@
+{% extends "homepage.html" %}
+
+{% block title %}
+    Fléshi - Perfil
+{% endblock %}
+
+{% block body %}
+<body>
+    {% include "navbar.html" %}
+    <h1>Perfil do usuário: {{ user.username }}</h1>
+
+    {% if form %}
+        <form method="post" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+            {{ form.photo() }}
+            {{ form.submit() }}
+        </form>
+    {% endif %}
+
+    {% for photo in user.photos %}
+        <div style="margin-top: 20px;">
+            <img src="{{ url_for('static', filename='posts_photos/' ~ photo.file_name) }}"
+                 alt="imagem" style="max-width:200px; display:block;">
+
+            <p>{{ photo.likes|length }} Curtidas</p>
+
+           <form method="POST" action="{{ url_for('like', photo_id=photo.id) }}">
+                <button type="submit">
+                    {% if current_user in photo.likes %}
+                        👎 Descurtir
+                    {% else %}
+                         👍 Curtir
+                    {% endif %}
+                 </button>
+            </form>
+
+            {% if current_user.id == user.id %}
+                <form method="post" action="{{ url_for('delete_photo', photo_id=photo.id) }}">
+                    {{ form.csrf_token }}
+                    <button type="submit">Excluir</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+</body>
+{% endblock %}
