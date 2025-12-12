@@ -1,30 +1,73 @@
 {% extends "homepage.html" %}
 
-{% block title %}
-    Fléshi - Feed
-{% endblock %}
-
 {% block body %}
-    {% include "navbar.html" %}
-    <h1>Feed Principal</h1>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Feed de Fotos</h1>
 
-    {% for photo in photos %}
-        <div class="photo-container" style="margin-bottom: 20px;">
-            <a href="{{ url_for('profile', user_id=photo.user_id) }}">
-                <img src="{{ url_for('static', filename='posts_photos/' ~ photo.file_name) }}" alt="imagem" style="max-width: 200px;">
-            </a>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+            <div class="container-fluid">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item mx-3">
+                        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="nav-link">
+                            <i class="bi bi-person-circle"></i> Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item mx-3">
+                        <a href="{{ url_for('logout') }}" class="nav-link">
+                            <i class="bi bi-box-arrow-right"></i> Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-            <p>{{ photo.likes|length }} Curtidas</p>
+        <div class="row">
+            {% for photo in photos %}
+                <div class="col-12 mb-4">
+                    <div class="card shadow-lg">
+                        <img src="{{ url_for('static', filename='posts_photos/' + photo.file_name) }}"
+                             class="card-img-top"
+                             alt="Foto"
+                             style="max-height: 380px; object-fit: cover; width: 100%;">
+                        <div class="card-body">
+                            <p class="text-muted">Postado em: {{ photo.timestamp.strftime('%d/%m/%Y %H:%M') }}</p>
 
-            <form method="POST" action="{{ url_for('like', photo_id=photo.id) }}">
-                <button type="submit">
-                    {% if current_user in photo.likes %}
-                        👎 Descurtir
-                    {% else %}
-                         👍 Curtir
-                    {% endif %}
-                 </button>
-            </form>
+                            <p class="text-success">
+                                <strong>{{ photo_likes[photo.id] }}</strong> Curtidas
+                            </p>
+
+                            <form action="{{ url_for('like', photo_id=photo.id) }}" method="POST" class="like-form mb-2">
+                                <button type="submit" class="btn btn-outline-success w-100">
+                                    {% if current_user in photo.likes %}
+                                        👎 Descurtir
+                                    {% else %}
+                                        ❤️ Curtir
+                                    {% endif %}
+                                </button>
+                            </form>
+
+                            <div class="comments mb-3">
+                                {% for comment in photo.comments %}
+                                    <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                                {% endfor %}
+                            </div>
+
+                            <form method="POST" action="{{ url_for('comment', photo_id=photo.id) }}">
+                                {{ form.hidden_tag() }}
+
+                                <div>
+                                    <label for="content">Digite seu comentário:</label>
+                                    {{ form.content(class="form-control") }}
+                                </div>
+
+                                <div class="mt-2">
+                                    {{ form.submit(class="btn btn-outline-success w-100", value="Comentar") }}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
+    </div>
 {% endblock %}

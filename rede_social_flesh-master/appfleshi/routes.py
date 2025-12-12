@@ -1,8 +1,8 @@
 from flask import render_template, url_for, redirect, request
 from flask_login import login_required, login_user, logout_user, current_user
-from appfleshi.forms import LoginForm, RegisterForm, PhotoForm
+from appfleshi.forms import LoginForm, RegisterForm, PhotoForm, CommentForm
 from appfleshi import app, database, bcrypt
-from appfleshi.models import User, Photo, Like
+from appfleshi.models import User, Photo, Like, Comment
 import os
 from werkzeug.utils import secure_filename
 import time
@@ -36,7 +36,7 @@ def profile(user_id):
             filename, ext = os.path.splitext(file.filename)
             unique_name = f"{filename}_{int(time.time())}{ext}"
 
-            path = os.path.join(os.path.abspath(os.path.dirname(__file__)),app.config['UPLOAD_FOLDER'],secure_filename(unique_name))
+            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], secure_filename(unique_name))
             file.save(path)
 
             photo = Photo(file_name=unique_name, user_id=current_user.id)
@@ -69,8 +69,16 @@ def logout():
 @app.route("/feed")
 @login_required
 def feed():
-    photos = Photo.query.order_by(Photo.upload_date.desc()).all()
-    return render_template("feed.html", photos=photos)
+    photos = Photo.query.order_by(Photo.timestamp.desc()).all()
+
+    photo_likes = {}
+
+    for photo in photos:
+        photo_likes[photo.id] = Like.query.filter_by(photo_id=photo.id).count()
+
+    form = CommentForm()
+
+    return render_template("feed.html", photos=photos, photo_likes=photo_likes, form=form)
 
 @app.route('/deletephoto/<photo_id>', methods=['GET', 'POST'])
 @login_required
@@ -80,7 +88,7 @@ def delete_photo(photo_id):
     if photo.user_id != current_user.id:
         return "Acesso negado", 403
 
-    path = os.path.join(os.path.abspath(os.path.dirname(__file__)),app.config['UPLOAD_FOLDER'], photo.file_name)
+    path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], photo.file_name)
     if os.path.exists(path):
         os.remove(path)
 
@@ -92,13 +100,28 @@ def delete_photo(photo_id):
 @app.route('/like/<photo_id>', methods=['POST'])
 @login_required
 def like(photo_id):
-    existing_like = Like.query.filter_by(user_id=current_user.id, photo_id=photo_id).first()
+    photo = Photo.query.get_or_404(photo_id)
+
+    existing_like = Like.query.filter_by(user_id=current_user.id, photo_id=photo.id).first()
 
     if existing_like:
         database.session.delete(existing_like)
     else:
-        like = Like(user_id=current_user.id, photo_id=photo_id)
-        database.session.add(like)
+        new_like = Like(user_id=current_user.id, photo_id=photo.id)
+        database.session.add(new_like)
 
     database.session.commit()
+
+    return redirect(url_for('feed'))
+
+@app.route('/comment/<photo_id>', methods=['POST'])
+@login_required
+def comment(photo_id):
+    form = CommentForm()
+    if form.validate_on_submit():
+        content = form.content.data
+        new_comment = Comment(content=content, user_id=current_user.id, photo_id=photo_id)
+        database.session.add(new_comment)
+        database.session.commit()
+        return redirect(url_for('feed'))
     return redirect(url_for('feed'))
