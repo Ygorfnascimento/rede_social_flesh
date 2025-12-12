@@ -28,35 +28,26 @@ def homepage():
 def profile(user_id):
     user = User.query.get(int(user_id))
 
+    # Se o usuário não for encontrado, retornar um erro 404
     if user is None:
         return "Usuário não encontrado", 404
 
     if int(user_id) != int(current_user.id):
         return render_template('profile.html', user=user, form=None)
 
-    photo_form = PhotoForm()
+    comment_form = CommentForm()  # Formulário para comentar nas fotos
+    photo_form = PhotoForm()  # Formulário para upload de fotos
 
-    if photo_form.validate_on_submit():
-        files = request.files.getlist("photo")
-
-        for file in files:
-            if file.filename == "":
-                continue
-
-            filename, ext = os.path.splitext(file.filename)
-            unique_name = f"{filename}_{int(time.time())}{ext}"
-
-            path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'],
-                                secure_filename(unique_name))
-            file.save(path)
-
-            photo = Photo(file_name=unique_name, user_id=current_user.id)
-            database.session.add(photo)
-
+    if comment_form.validate_on_submit():
+        content = comment_form.content.data
+        photo_id = request.form.get('photo_id')
+        new_comment = Comment(content=content, user_id=current_user.id, photo_id=photo_id)
+        database.session.add(new_comment)
         database.session.commit()
         return redirect(url_for('profile', user_id=current_user.id))
 
-    return render_template('profile.html', user=current_user, form=photo_form)
+    return render_template('profile.html', user=user, comment_form=comment_form, photo_form=photo_form)
+
 
 @app.route('/createaccount', methods=['GET', 'POST'])
 def createaccount():
@@ -97,23 +88,25 @@ def feed():
 
     return render_template("feed.html", photos=photos, photo_likes=photo_likes, form=form)
 
-@app.route('/deletephoto/<photo_id>', methods=['GET', 'POST'])
+@app.route('/deletephoto/<photo_id>', methods=['POST'])
 @login_required
 def delete_photo(photo_id):
     photo = Photo.query.get(photo_id)
 
+    # Verifica se o usuário é o proprietário da foto
     if photo.user_id != current_user.id:
         return "Acesso negado", 403
 
+    # Exclui o arquivo de foto do sistema de arquivos
     path = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], photo.file_name)
     if os.path.exists(path):
         os.remove(path)
 
-        database.session.delete(photo)
-        database.session.commit()
+    # Exclui a foto do banco de dados
+    database.session.delete(photo)
+    database.session.commit()
 
-        return redirect(url_for('profile', user_id=photo.user_id))
-
+    return redirect(url_for('profile', user_id=current_user.id))
 
 @app.route('/like/<photo_id>', methods=['POST'])
 @login_required

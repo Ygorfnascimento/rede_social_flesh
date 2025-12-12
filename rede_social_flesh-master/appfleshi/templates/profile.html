@@ -2,14 +2,19 @@
 
 {% block body %}
     <div class="container mt-4">
-        <h1 class="text-center mb-4">Perfil de {{ user.username }}</h1>
+        <h1 class="text-center mb-4">Meu Perfil</h1>
 
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
             <div class="container-fluid">
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item mx-3">
+                        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="nav-link">
+                            <i class="bi bi-person-circle"></i> Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item mx-3">
                         <a href="{{ url_for('feed') }}" class="nav-link">
-                            <i class="bi bi-house-door-fill"></i> Feed
+                            <i class="bi bi-images"></i> Feed
                         </a>
                     </li>
                     <li class="nav-item mx-3">
@@ -21,35 +26,75 @@
             </div>
         </nav>
 
-        <div class="border rounded-3 shadow-lg p-4 mb-4 bg-light">
-            <h3>Adicionar Foto</h3>
-            <form method="POST" enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
-                <div class="mb-3">
-                    <label for="photo" class="form-label">Selecione uma foto:</label>
-                    <input type="file" id="photo" name="photo" class="form-control" required>
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-outline-success">Enviar</button>
-                </div>
-            </form>
-        </div>
-
-        <h3 class="text-center">Suas Fotos</h3>
         <div class="row">
-            {% for photo in user.photos %}
-                <div class="col-md-6 col-sm-12 mb-4">
-                    <div class="card">
-                        <img src="{{ url_for('static', filename='posts_photos/' + photo.file_name) }}"
-                             class="card-img-top"
-                             alt="Foto"
-                             style="height: 250px; object-fit: cover; width: 100%;">
-                        <div class="card-body">
-                            <p class="text-muted">Postado em: {{ photo.timestamp.strftime('%d/%m/%Y %H:%M') }}</p>
+            {% if user.photos %}
+                <!-- Exibe as fotos do usuário -->
+                {% for photo in user.photos %}
+                    <div class="col-md-6 col-sm-12 mb-4">
+                        <div class="card shadow-lg">
+                            <img src="{{ url_for('static', filename='posts_photos/' + photo.file_name) }}"
+                                 class="card-img-top"
+                                 alt="Foto"
+                                 style="height: 300px; object-fit: cover; width: 100%;">
+                            <div class="card-body">
+                                <p class="text-muted">Postado em: {{ photo.timestamp.strftime('%d/%m/%Y %H:%M') }}</p>
+
+                                {% if photo.user_id == current_user.id %}
+                                    <!-- Exibição do botão de excluir foto apenas no perfil do usuário -->
+                                    <form action="{{ url_for('delete_photo', photo_id=photo.id) }}" method="POST">
+                                        <button type="submit" class="btn btn-danger w-100">Excluir Foto</button>
+                                    </form>
+                                {% endif %}
+
+                                <p><strong>{{ photo.likes.count() }}</strong> Curtidas</p>
+
+                                <form action="{{ url_for('like', photo_id=photo.id) }}" method="POST" class="like-form mb-2">
+                                    <button type="submit" class="btn btn-outline-success w-100">
+                                        {% if current_user in photo.likes %}
+                                            👎 Descurtir
+                                        {% else %}
+                                            ❤️ Curtir
+                                        {% endif %}
+                                    </button>
+                                </form>
+
+                                <div class="comments mb-3">
+                                    {% for comment in photo.comments %}
+                                        <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                                    {% endfor %}
+                                </div>
+
+                                <form method="POST" action="{{ url_for('comment', photo_id=photo.id) }}">
+                                    {{ comment_form.hidden_tag() }}
+                                    <div class="mb-2">
+                                        <label for="content">Digite seu comentário:</label>
+                                        {{ comment_form.content(class="form-control") }}
+                                    </div>
+                                    <input type="hidden" name="photo_id" value="{{ photo.id }}">
+                                    <div class="mt-2">
+                                        <button type="submit" class="btn btn-outline-success w-100">Comentar</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
+                {% endfor %}
+            {% else %}
+                <!-- Se não houver fotos, mostra o formulário de upload -->
+                <div class="col-12">
+                    <h4 class="text-center">Você ainda não tem fotos. Faça o upload de uma foto!</h4>
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ photo_form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label for="photo" class="form-label">Escolha uma foto para upload:</label>
+                            {{ photo_form.photo(class="form-control", type="file") }}
+                        </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-primary w-100">Upload de Foto</button>
+                        </div>
+                    </form>
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 {% endblock %}
