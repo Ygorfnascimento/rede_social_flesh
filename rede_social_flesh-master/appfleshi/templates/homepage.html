@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+            Fléshi - Página inicial
+        {% endblock %}
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin-top: 50px;
+        }
+        .form-container {
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-custom {
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+        }
+        .register-link {
+            text-align: center;
+            display: block;
+            margin-top: 15px;
+        }
+        .register-link a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+{% block body %}
+<body>
+    <h1>Fléshi - Página inicial</h1>
+
+    <div class="container">
+        <div class="form-container">
+            <form method="post">
+                {{ form.csrf_token }}
+
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control") }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control") }}
+                </div>
+
+                <div>
+                    {{ form.submit(class="btn btn-custom") }}
+                </div>
+            </form>
+
+            <div class="register-link">
+                <p>Não tem uma conta? <a href="{{ url_for('createaccount') }}">Cadastre-se</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+{% endblock %}
+</html>
