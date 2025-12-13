@@ -1,0 +1,72 @@
+{% extends "homepage.html" %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1 class="text-center mb-2">Perfil de {{ user.username }}</h1>
+    <p class="text-center text-muted mb-4">
+        Bem-vindo(a), {{ user.username }} 👋
+    </p>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container-fluid">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item mx-3">
+                    <a href="{{ url_for('feed') }}" class="nav-link">
+                        Feed
+                    </a>
+                </li>
+                <li class="nav-item mx-3">
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        Sair
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <form method="POST" enctype="multipart/form-data">
+                {{ photo_form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="form-label">Enviar nova foto</label>
+                    {{ photo_form.photo(class="form-control") }}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    Fazer upload da foto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for photo in user.photos %}
+            <div class="col-md-6 col-sm-12 mb-4">
+                <div class="card shadow-lg">
+                    <img
+                        src="{{ url_for('static', filename='posts_photos/' + photo.file_name) }}"
+                        class="card-img-top"
+                        style="height: 300px; object-fit: cover;"
+                    >
+
+                    <div class="card-body">
+                        <p class="text-muted">
+                            {{ photo.timestamp.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+
+                        <form action="{{ url_for('delete_photo', photo_id=photo.id) }}" method="POST">
+                            <button type="submit" class="btn btn-danger w-100">
+                                Excluir Foto
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-center">Você ainda não postou nenhuma foto.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
